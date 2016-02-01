@@ -17,10 +17,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 '''
 
-from autosym.description import Description, Pin
+from autosym.description import Pin
 
 """
-Symbol calss to generate symbol file
+Symbol class to generate symbol file
 """
 
 
@@ -33,10 +33,9 @@ class Symbol(object):
         The variant to be used.
 
     """
-    _ALIGN_LEFT = 0  #: Text align left
+    _ALIGN_LEFT = 0
     _ALIGN_CENTER = 3
     _ALIGN_RIGHT = 6
-
     _ALIGN_TOP = 2
     _ALIGN_MIDDLE = 1
     _ALIGN_BOTTOM = 0
@@ -50,15 +49,18 @@ class Symbol(object):
         self.data = 'v 20110115 2\n'
 
     def generate(self, variant_id=0):
+        """ Generate symbol data.
+
+        Parameters
+        ----------
+        variant_id: :class:`int`
+            The index of the variant to be used.
+
+        Returns
+        -------
+        The data string of the generated variant.
         """
-        Generates the symbol data.
-
-        """
-        # calculate distance and other parapeters
-
-
         options = self.description.options
-
         symbol_width = 1000
         if 'symbol_width' in options.keys():
             symbol_width = int(options['symbol_width'])
@@ -78,19 +80,14 @@ class Symbol(object):
         box_height = (self.description.height + 1) * pin_grid
         self.set_box(x_padding, y_padding, box_width, box_height)
 
-
-        print self.description.options
-        print self.description.descriptions
-
         variant = self.description.variants[variant_id]
-        print "generating variant: %s" % variant._name
 
         for pin in variant.pins():
             y_pos = box_height - (pin.position + 1) * pin_grid + y_padding
 
             name = pin.name
             if name.startswith('!'):
-               name = '\_'+name[1:]
+                name = '\_' + name[1:]
 
             if pin.direction == Pin.Direction.left:
                 self.set_pin(name, pin.number, pin.type, x_padding - pin_length, y_pos, pin_length, False)
@@ -112,7 +109,7 @@ class Symbol(object):
         if variant.footprint:
             text_pos += line_spacing
             self.set_text('footprint', variant.footprint, x_padding, text_pos,
-                              color=8, size=10, visibility=0, show=self._SHOW_NAME_VALUE)
+                          color=8, size=10, visibility=0, show=self._SHOW_NAME_VALUE)
         for attr in hidden_attrs[::-1]:
             text_pos += line_spacing
             value = ""
@@ -121,61 +118,75 @@ class Symbol(object):
             self.set_text(attr, value, x_padding, text_pos,
                           color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
 
-
-
         return self.data
+
+    def filename(self, variant_id=0):
+        """ Generate symbol file name.
+
+        Parameters
+        ----------
+        variant_id: :class:`int`
+            The index of the variant to be used.
+
+        Returns
+        -------
+        The (folder, filename) the variant. The folder can be None.
+        """
+
+        desc = self.description.descriptions
+        variant = self.description.variants[variant_id].package
+        folder = desc.get('category', '')
+        device = desc.get('device', '')
+        if not device:
+            raise KeyError('Device name is not defined.')
+        if folder:
+            return folder, "%s%s.sym" % (device, variant)
+        return None, "%s%s.sym" % (device, variant)
 
     def set_text(self, name, value, x, y, color=8, size=10, visibility=1, show=_SHOW_VALUE, angle=0, alignment=0,
                  lines=1):
-        """
-        Set a text within the symbol.
+        """ Add text to file
 
-         Parameters
+        Parameters
         ----------
         name: :class:`string`
             The text name.
         value: :class:`string`
             The text value.
         x: :class:`int`
-            x coordinates.
+            x coordinates
         y: :class:`int`
-            y coordinates.
+            y coordinates
         color: :class:`int`
-            y coordinates.
+            color of text
         size: :class:`int`
-            y coordinates.
+            size of text
         visibility: :class:`int`
-            y coordinates.
+            1 for visible, 0 for hidden
         show: :class:`int`
-            y coordinates.
+            what should be shown _SHOW_NAME_VALUE, _SHOW_VALUE or _SHOW_NAME
         angle: :class:`int`
-            y coordinates.
+            text direction 0, 90, 128 or 240
         alignment: :class:`int`
-            y coordinates.
+            text alignment
         lines: :class:`int`
-            y coordinates.
+            amount of lines
 
-            
         Only name, value and position (x/y) need to be set.
         
-        Returns None
+        Returns
+        -------
+        None
         """
         # T x y color size visibility show name value angle alignment num lines
         self.data += "T %d %d %d %d %d %d %d %d %d\n" % (x, y, color, size, visibility, show, angle, alignment, lines)
         self.data += "%s=%s\n" % (name, value)
 
-    """
-    Add a pin to the symbol
-
-    """
-
     def set_pin(self, name, number, pin_type, x, y, length=300, mirror=False):
-        rotation = 180
         align1 = self._ALIGN_MIDDLE + self._ALIGN_LEFT
         align2 = self._ALIGN_BOTTOM + self._ALIGN_RIGHT
         offset = 1
         if mirror:
-            rotation = 0
             align1 = self._ALIGN_MIDDLE + self._ALIGN_RIGHT
             align2 = self._ALIGN_BOTTOM + self._ALIGN_LEFT
             offset = -1
@@ -186,147 +197,11 @@ class Symbol(object):
         self.set_text('pinseq', number, x + (length - 50) * offset, y + 50, 5, 8, 0, self._SHOW_VALUE, 0, align2, 1)
         self.set_text('pintype', pin_type, x + (length - 50) * offset, y + 50, 5, 8, 0, self._SHOW_VALUE, 0, align2, 1)
 
-        self.set_text('pinlabel', name, x + (length+50) * offset, y, 5, 10, 1, self._SHOW_VALUE, 0, align1, 1)
+        self.set_text('pinlabel', name, x + (length + 50) * offset, y, 5, 10, 1, self._SHOW_VALUE, 0, align1, 1)
         self.data += "}\n"
-
-    """
-    Add a pox to the symbol
-    """
 
     def set_box(self, x, y, width, height):
         self.data += "B %d %d %d %d 3 0 0 0 -1 -1 0 -1 -1 -1 -1 -1\n" % (x, y, width, height)
 
-
 if __name__ == '__main__':
     pass
-
-'''
-def make_sym(self, path):
-        if self.error:
-            return None
-        #print 'm_left',self._m_left
-        #print 'm_right',self._m_right
-        #print 'variants',variants
-        #print 'descriptions', descriptions
-        #print 'options', options
-
-        min_width = 400
-        if 'min_width' in self.options.keys():
-            min_width = int(self.options['min_width'])
-
-        pin_length = 300
-        if 'pin_length' in self.options.keys():
-            pin_length = int(self.options['pin_length'])
-
-        pin_grid = 200
-        if 'pin_grid' in self.options.keys():
-            pin_grid = int(self.options['pin_grid'])
-
-        box_width = int((self.width()/5.4+200)/100)
-        box_width = 100*(box_width+1)
-        box_width = max(box_width,min_width)
-
-        sym = symbol.Symbol()
-
-        x = 0
-        y = 0
-        height = (max(len(self._m_left),len(self._m_right))-1)*pin_grid+200
-        ht_x = box_width+pin_length+pin_length+200
-        ht_y = 0
-
-        category = ''
-        if 'category' in self.descriptions.keys():
-            category = self.descriptions['category']
-
-        if 'refdes' in self.descriptions.keys():
-            sym._set_text('refdes',self.descriptions['refdes'],x+pin_length , y+height+200)
-        if 'device' in self.descriptions.keys():
-            sym._set_text('device',self.descriptions['device'],x+box_width+pin_length , y+height+200, alignment=6)
-
-        if 'dist-license' in self.descriptions.keys():
-            sym._set_text('dist-license',self.descriptions['dist-license'], ht_x , ht_y, visibility=0, show=sym.SHOW_NAME_VALUE)
-            ht_y+=200
-
-        if 'use-license'  in self.descriptions.keys():
-            sym._set_text('use-license',self.descriptions['use-license'],ht_x ,ht_y, visibility=0, show=sym.SHOW_NAME_VALUE)
-            ht_y+=200
-
-        if 'comment' in self.descriptions.keys():
-            sym._set_text('comment',self.descriptions['comment'], ht_x, ht_y, visibility=0, show=sym.SHOW_NAME_VALUE)
-            ht_y+=200
-
-        if 'documentation' in self.descriptions.keys():
-            sym._set_text('documentation',self.descriptions['documentation'], ht_x, ht_y, visibility=0, show=sym.SHOW_NAME_VALUE)
-            ht_y+=200
-
-        if 'symversion' in self.descriptions.keys():
-            sym._set_text('symversion',self.descriptions['symversion'], ht_x, ht_y, visibility=0, show=sym.SHOW_NAME_VALUE)
-            ht_y+=200
-
-        if 'author' in self.descriptions.keys():
-            sym._set_text('author',self.descriptions['author'], ht_x, ht_y, visibility=0, show=sym.SHOW_NAME_VALUE)
-            ht_y+=200
-
-
-        sym.set_box(x+pin_length, y, box_width, height+100)
-
-        header_data = sym.data
-
-        variant_nr = 0
-        for variant in self._variant_lines:
-            sym.data = header_data
-
-            if 'description' in self.descriptions.keys():
-                sym._set_text('description',self.descriptions['description']+', '+variant[1], ht_x, ht_y, visibility=0, show=sym.SHOW_NAME_VALUE)
-
-
-            y = height-100
-            x = 0
-
-            first_pin = y
-            for pin in self._m_left:
-                if len(pin):
-                    numbers = pin[0]
-                    if len(numbers) > variant_nr:
-                        name = pin[1].strip(' ')
-                        #print "LEFT:",name, variant_nr, pin
-                        if name.startswith('!'):
-                            name = '\_'+name[1:]
-                        try:
-                            sym._set_text(name, int(numbers[variant_nr]), pin[2].strip(' '), x, y, length=pin_length)
-                        except ValueError:
-                            pass
-
-                y-=pin_grid
-
-            x += box_width+pin_length+pin_length
-            y = first_pin
-            for pin in self._m_right:
-                if len(pin):
-                    numbers = pin[0]
-                    if len(numbers) > variant_nr:
-                        name = pin[1].strip(' ')
-                        #print "Right:",name, variant_nr, pin
-                        if name.startswith('!'):
-                            name = '\_'+name[1:]
-                        try:
-                            sym._set_text(name, int(numbers[variant_nr]), pin[2].strip(' '), x, y,length=pin_length, mirror=True)
-                        except ValueError:
-                            pass
-                y-=pin_grid
-
-
-            #print sym.data
-            file_path = path+'/'+category+'/'
-            file_name = file_path+self.descriptions['device']+variant[0]+'.sym'
-
-            if not os.path.isdir(file_path):
-                os.mkdir(file_path)
-            print "Generating %s package: %s"%(variant[0],file_name)
-            h = open(file_name,'w')
-            h.write(sym.data)
-            h.close()
-
-            variant_nr += 1
-        print
-'''

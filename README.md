@@ -14,6 +14,12 @@ my code to make it usable for others.
 
 Usage
 -----
+You can use the generation script:
+```
+./autosym-generate.py library output
+```
+If you want to use autosym in your own script you can use the 
+following lines as a basic template or look into autosym-generate.py
 ```python
 from autosym.description import Description
 from autosym.render import gschem
@@ -29,6 +35,9 @@ h.close()
 
 Installation
 -----------
+The package does not have to be installed if used directly from 
+autosim-generate.py if you want to import the library in you own
+script run:
 ```shell
 python setup.py install
 ```

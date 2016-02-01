@@ -129,6 +129,13 @@ class Variant(object):
         #    ret += "    %s\n"%str(pin.name)
         return ret
 
+    @property
+    def name(self):
+        return self._name
+    @property
+    def package(self):
+        return self._package
+
     def pins(self, direction=None):
         if direction:
             return filter(lambda x: x.direction == direction, self._pins)

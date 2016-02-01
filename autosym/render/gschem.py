@@ -41,14 +41,6 @@ class Symbol(object):
     _ALIGN_MIDDLE = 1
     _ALIGN_BOTTOM = 0
 
-    '''
-    2 -- 5 -- 8
-	|    |    |
-	1 -- 4 -- 7
-	|    |    |
-	0 -- 3 -- 6
-	'''
-
     _SHOW_NAME_VALUE = 0
     _SHOW_VALUE = 1
     _SHOW_NAME = 2
@@ -117,13 +109,19 @@ class Symbol(object):
         hidden_attrs = ['description', 'comment', 'documentation', 'symversion', 'author', 'dist-license',
                         'use-license']
 
+        if variant.footprint:
+            text_pos += line_spacing
+            self.set_text('footprint', variant.footprint, x_padding, text_pos,
+                              color=8, size=10, visibility=0, show=self._SHOW_NAME_VALUE)
         for attr in hidden_attrs[::-1]:
             text_pos += line_spacing
             value = ""
             if attr in desc.keys():
                 value = desc[attr]
-            print attr, value
-            self.set_text(attr, value, x_padding, text_pos, 8, 0, self._SHOW_NAME_VALUE)
+            self.set_text(attr, value, x_padding, text_pos,
+                          color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
+
+
 
         return self.data
 

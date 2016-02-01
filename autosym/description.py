@@ -104,11 +104,12 @@ class Pin(object):
 
 
 class Variant(object):
-    def __init__(self, package, name):
+    def __init__(self, package, name, footprint=""):
         self._index = False
         self._name = name
         self._package = package
         self._pins = []
+        self.footprint = footprint
         self.options = {}
 
     def __str__(self):
@@ -211,9 +212,7 @@ class Description(object):
 
         m = re_value3.match(line)
         if m:
-            x = list(m.groups())
-            x[0] = x[0].split(',')
-            return "VALUE", x
+            return "VALUE", m.groups()
 
         m = re_value2.match(line)
         if m:
@@ -242,11 +241,16 @@ class Description(object):
                 option = line_value[1]
 
             if option == 'mapping left' and line_value[0] == "VALUE":
-                self._m_left.append(line_value[1])
+                x = list(line_value[1])
+                x[0] = x[0].split(',')
+                self._m_left.append(x)
             if option == 'mapping left' and line_value[0] == "EMPTY":
                 self._m_left.append([])
+
             if option == 'mapping right' and line_value[0] == "VALUE":
-                self._m_right.append(line_value[1])
+                x = list(line_value[1])
+                x[0] = x[0].split(',')
+                self._m_right.append(x)
             if option == 'mapping right' and line_value[0] == "EMPTY":
                 self._m_right.append([])
                 # make a list ov variants
@@ -263,7 +267,10 @@ class Description(object):
 
         for idx, variant in enumerate(self._variant_lines):
             cnt = 0
-            v = Variant(variant[0], variant[1])
+            footprint = None
+            if len(variant) > 2:
+                footprint = variant[2]
+            v = Variant(variant[0], variant[1], footprint)
             for pin in self._m_left:
                 v.append_pin(Pin(pin, idx, Pin.Direction.left, cnt))
                 cnt += 1
@@ -272,20 +279,6 @@ class Description(object):
                 v.append_pin(Pin(pin, idx, Pin.Direction.right, cnt))
                 cnt += 1
             self._variants.append(v)
-
-
-    def _generate_variant(self, variant):
-        cnt = 0
-        v = Variant(self._variant_lines[variant][0], self._variant_lines[variant][1])
-        v.options = self.options
-        for pin in self._m_left:
-            v.append_pin(Pin(pin, variant, Pin.Direction.left, cnt))
-            cnt += 1
-        cnt = 0
-        for pin in self._m_right:
-            v.append_pin(Pin(pin, variant, Pin.Direction.right, cnt))
-            cnt += 1
-        return v
 
     @property
     def variants(self):

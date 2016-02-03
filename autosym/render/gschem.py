@@ -48,19 +48,34 @@ class Symbol(object):
         self.description = desc
         self.data = 'v 20110115 2\n'
 
-    def generate(self, variant_id=0):
-        """ Generate symbol data.
+    def _generate_header(self, variant_id):
+        symbol_width = 1000
+        if 'symbol_width' in options.keys():
+            symbol_width = int(options['symbol_width'])
 
-        Parameters
-        ----------
-        variant_id: :class:`int`
-            The index of the variant to be used.
+        pin_length = 300
+        if 'pin_length' in options.keys():
+            pin_length = int(options['pin_length'])
 
-        Returns
-        -------
-        The data string of the generated variant.
-        """
+        pin_grid = 200
+        if 'pin_grid' in options.keys():
+            pin_grid = int(options['pin_grid'])
+
+        numbering = 'Z'
+        if 'numbering' in options.keys():
+            numbering = options['numbering']
+
+        pin_geomtry = 'box'
+        if 'pin_length' in options.keys():
+            pin_geomtry = options['pin_geomtry']
+
+
+
+        return self.data
+
+    def _generate_box(self, variant_id):
         options = self.description.options
+
         symbol_width = 1000
         if 'symbol_width' in options.keys():
             symbol_width = int(options['symbol_width'])
@@ -105,7 +120,6 @@ class Symbol(object):
 
         hidden_attrs = ['description', 'comment', 'documentation', 'symversion', 'author', 'dist-license',
                         'use-license']
-
         if variant.footprint:
             text_pos += line_spacing
             self.set_text('footprint', variant.footprint, x_padding, text_pos,
@@ -117,8 +131,29 @@ class Symbol(object):
                 value = desc[attr]
             self.set_text(attr, value, x_padding, text_pos,
                           color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
-
         return self.data
+
+    def generate(self, variant_id=0):
+        """ Generate symbol data.
+
+        Parameters
+        ----------
+        variant_id: :class:`int`
+            The index of the variant to be used.
+
+        Returns
+        -------
+        The data string of the generated variant.
+        """
+        options = self.description.options
+
+        if 'type' in options.keys():
+            if options['type'] == 'header':
+                return self._generate_header(variant_id)
+        return self._generate_box(variant_id)
+
+
+
 
     def filename(self, variant_id=0):
         """ Generate symbol file name.
@@ -135,6 +170,9 @@ class Symbol(object):
 
         desc = self.description.descriptions
         variant = self.description.variants[variant_id].package
+
+        if variant == '-':
+            variant = ''
         folder = desc.get('category', '')
         device = desc.get('device', '')
         if not device:

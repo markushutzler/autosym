@@ -52,9 +52,9 @@ if __name__ == '__main__':
     # find all symd files in input directory
     for r, d, f in os.walk(symd_path):
         for files in f:
-            if files.endswith(".symx"):
-                file_list.append(os.path.join(r, files))
             if files.endswith(".symd"):
+                file_list.append(os.path.join(r, files))
+            if files.endswith(".sym"):
                 file_list.append(os.path.join(r, files))
 
     # generate symbols for symbol description files

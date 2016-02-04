@@ -20,23 +20,10 @@
 import re
 from enum import Enum
 
-re_option = re.compile("^\[([A-Za-z ]+)\]$")
-re_config = re.compile("^([\S ]+)=([\S ]+)$")
+re_option = re.compile("^\[([A-Za-z ]+)\]?")
+re_config = re.compile("^([\S ]+)=([\S ]+)?")
 re_value2 = re.compile("^([\S ]+)\s*:\s*([\S ]+)$")
 re_value3 = re.compile("^([\S ]+)\s*:\s*([\S ]+)\s*:\s*([\S ]+)\s*$")
-
-table = {' ': 200, '!': 254, '"': 444, '#': 644, '$': 536, '%': 719, '&': 796, "'": 235, '(': 304, ')': 304,
-         '*': 416, '+': 533, ',': 217, '-': 294, '.': 216, '/': 273, '[': 342, '\\': 273, ']': 342, '^': 247,
-         '_': 475, '{': 380, '|': 265, '}': 380, '~': 533,
-         '0': 533, '1': 533, '2': 533, '3': 533, '4': 533, '5': 533, '6': 533, '7': 533, '8': 533, '9': 533,
-         ':': 216, ';': 217, '<': 533, '=': 533, '>': 533, '?': 361, '@': 757,
-         'A': 724, 'B': 598, 'C': 640, 'D': 750, 'E': 549, 'F': 484, 'G': 720, 'H': 742, 'I': 326, 'J': 315,
-         'K': 678, 'L': 522, 'M': 835, 'N': 699, 'O': 779, 'P': 532, 'Q': 779, 'R': 675, 'S': 536, 'T': 596,
-         'U': 722, 'V': 661, 'W': 975, 'X': 641, 'Y': 641, 'Z': 684,
-         'a': 441, 'b': 540, 'c': 448, 'd': 542, 'e': 466, 'f': 321, 'g': 479, 'h': 551, 'i': 278, 'j': 268,
-         'k': 530, 'l': 269, 'm': 833, 'n': 560, 'o': 554, 'p': 549, 'q': 534, 'r': 398, 's': 397, 't': 340,
-         'u': 542, 'v': 535, 'w': 818, 'x': 527, 'y': 535, 'z': 503,
-         }
 
 
 class ParsingError(Exception):
@@ -208,6 +195,9 @@ class Description(object):
             return "EMPTY", 0
         if line[0] == '#':
             return "COMMENT", 0
+        line = line.split('#')
+        line = line[0]
+        line.strip(' \t\r\n')
 
         m = re_option.match(line)
         if m:
@@ -215,15 +205,15 @@ class Description(object):
 
         m = re_config.match(line)
         if m:
-            return "CONFIG", m.groups()
+            return "CONFIG", map(str.strip, m.groups())
 
         m = re_value3.match(line)
         if m:
-            return "VALUE", m.groups()
+            return "VALUE", map(str.strip, m.groups())
 
         m = re_value2.match(line)
         if m:
-            return "VALUE", m.groups()
+            return "VALUE", map(str.strip, m.groups())
         return "ERROR", 0
 
     " Parse symbol descrition "
@@ -238,7 +228,7 @@ class Description(object):
         for line in data:
             line_nr += 1
             # remove all line ending characters or white spaces
-            line = line.strip('\n\r ')
+            line = line.strip('\n\r\t ')
             # parse line and check if more handeling has to be done
             line_value = self._parse_line(line)
 
@@ -272,20 +262,25 @@ class Description(object):
             if option == 'option' and line_value[0] == "CONFIG":
                 self._options[line_value[1][0]] = line_value[1][1]
 
-        for idx, variant in enumerate(self._variant_lines):
-            cnt = 0
-            footprint = None
-            if len(variant) > 2:
-                footprint = variant[2]
-            v = Variant(variant[0], variant[1], footprint)
-            for pin in self._m_left:
-                v.append_pin(Pin(pin, idx, Pin.Direction.left, cnt))
-                cnt += 1
-            cnt = 0
-            for pin in self._m_right:
-                v.append_pin(Pin(pin, idx, Pin.Direction.right, cnt))
-                cnt += 1
-            self._variants.append(v)
+        symbol_type = 'box'
+        if 'type' in self._options.keys():
+            symbol_type = self._options['type']
+
+        if symbol_type == 'box':
+            for idx, variant in enumerate(self._variant_lines):
+                cnt = 0
+                footprint = None
+                if len(variant) > 2:
+                    footprint = variant[2]
+                v = Variant(variant[0], variant[1], footprint)
+                for pin in self._m_left:
+                    v.append_pin(Pin(pin, idx, Pin.Direction.left, cnt))
+                    cnt += 1
+                cnt = 0
+                for pin in self._m_right:
+                    v.append_pin(Pin(pin, idx, Pin.Direction.right, cnt))
+                    cnt += 1
+                self._variants.append(v)
 
     @property
     def variants(self):

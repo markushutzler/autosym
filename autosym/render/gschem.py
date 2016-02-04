@@ -18,13 +18,14 @@
 '''
 
 from autosym.description import Pin
+from autosym.render import SymbolRender
 
 """
 Symbol class to generate symbol file
 """
 
 
-class Symbol(object):
+class Symbol(SymbolRender):
     """Symbol class for gschem.
 
     Parameters
@@ -33,6 +34,7 @@ class Symbol(object):
         The variant to be used.
 
     """
+
     _ALIGN_LEFT = 0
     _ALIGN_CENTER = 3
     _ALIGN_RIGHT = 6
@@ -48,7 +50,9 @@ class Symbol(object):
         self.description = desc
         self.data = 'v 20110115 2\n'
 
+    '''
     def _generate_header(self, variant_id):
+        options = self.description.options
         symbol_width = 1000
         if 'symbol_width' in options.keys():
             symbol_width = int(options['symbol_width'])
@@ -69,9 +73,8 @@ class Symbol(object):
         if 'pin_length' in options.keys():
             pin_geomtry = options['pin_geomtry']
 
-
-
         return self.data
+    '''
 
     def _generate_box(self, variant_id):
         options = self.description.options
@@ -145,15 +148,14 @@ class Symbol(object):
         -------
         The data string of the generated variant.
         """
-        options = self.description.options
 
+        '''
+        options = self.description.options
         if 'type' in options.keys():
             if options['type'] == 'header':
                 return self._generate_header(variant_id)
+        '''
         return self._generate_box(variant_id)
-
-
-
 
     def filename(self, variant_id=0):
         """ Generate symbol file name.

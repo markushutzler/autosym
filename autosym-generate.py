@@ -21,7 +21,7 @@ import os
 import errno
 from optparse import OptionParser
 from autosym.render import gschem
-from autosym.description import Description
+from autosym.description import Description, ParsingError
 
 if __name__ == '__main__':
     usage = "usage: %prog [options] library-path output-path"
@@ -61,25 +61,30 @@ if __name__ == '__main__':
         if not options.quiet:
             print f, ">>",
         symd = Description(f)
-        symd.parse()
-        g = gschem.Symbol(symd)
-        for index, variant in enumerate(symd.variants):
-            data = g.generate(index)
-            subfolder, filename = g.filename(index)
-            if subfolder:
-                subfolder = output_path+'/'+subfolder+'/'
-            else:
-                subfolder = output_path+'/'
+        try:
+            symd.parse()
+            g = gschem.Symbol(symd)
+            for index, variant in enumerate(symd.variants):
+                data = g.generate(index)
+                subfolder, filename = g.filename(index)
+                if subfolder:
+                    subfolder = output_path+'/'+subfolder+'/'
+                else:
+                    subfolder = output_path+'/'
 
-            try:
-                os.makedirs(subfolder)
-            except OSError as exc:
-                if exc.errno != errno.EEXIST:
-                    raise
+                try:
+                    os.makedirs(subfolder)
+                except OSError as exc:
+                    if exc.errno != errno.EEXIST:
+                        raise
+                if not options.quiet:
+                    print subfolder+filename,
+                h = open(subfolder+filename, 'w')
+                h.write(data)
+                h.close()
             if not options.quiet:
-                print subfolder+filename,
-            h = open(subfolder+filename, 'w')
-            h.write(data)
-            h.close()
-        if not options.quiet:
-            print
+                print
+            
+        except ParsingError, e:
+            print 'Parsing error in %s line %d:\n%s' % (e.file, e.line_nr, e.line)
+

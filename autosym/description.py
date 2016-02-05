@@ -24,11 +24,18 @@ re_config = re.compile("^([\S ]+)=([\S ]+)?")
 
 
 class ParsingError(Exception):
-    def __init__(self, value):
-        self.value = value
+
+    line = ""
+    line_nr = -1
+    file = ""
+
+    def __init__(self, file, line_nr, line):
+        self.line = line
+        self.line_nr = line_nr
+        self.file = file
 
     def __str__(self):
-        return repr(self.value)
+        return repr(self.line)
 
 
 class Pin(object):
@@ -198,7 +205,7 @@ class Description(object):
             vtype, value = self._parse_line(line)
 
             if vtype == "ERROR":
-                raise ParsingError("%d: %s" % (line_nr, line))
+                raise ParsingError(self._path, line_nr, line)
             if vtype == "OPTION":
                 option = value
 

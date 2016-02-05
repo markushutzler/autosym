@@ -1,31 +1,29 @@
 # -*- coding: utf-8 -*-
-'''
-    autosym - Automatic generic schematic symbol generation
-    Copyright (C) 2015  Markus Hutzler
+# autosym - Automatic generic schematic symbol generation
+# Copyright (C) 2015  Markus Hutzler
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-'''
 
 from autosym.description import Pin
-from autosym.render import SymbolRender
 
 """
 Symbol class to generate symbol file
 """
 
 
-class Symbol(SymbolRender):
+class Symbol(object):
     """Symbol class for gschem.
 
     Parameters
@@ -49,32 +47,6 @@ class Symbol(SymbolRender):
     def __init__(self, desc):
         self.description = desc
         self.data = 'v 20110115 2\n'
-
-    '''
-    def _generate_header(self, variant_id):
-        options = self.description.options
-        symbol_width = 1000
-        if 'symbol_width' in options.keys():
-            symbol_width = int(options['symbol_width'])
-
-        pin_length = 300
-        if 'pin_length' in options.keys():
-            pin_length = int(options['pin_length'])
-
-        pin_grid = 200
-        if 'pin_grid' in options.keys():
-            pin_grid = int(options['pin_grid'])
-
-        numbering = 'Z'
-        if 'numbering' in options.keys():
-            numbering = options['numbering']
-
-        pin_geomtry = 'box'
-        if 'pin_length' in options.keys():
-            pin_geomtry = options['pin_geomtry']
-
-        return self.data
-    '''
 
     def _generate_box(self, variant_id):
         options = self.description.options
@@ -146,15 +118,9 @@ class Symbol(SymbolRender):
 
         Returns
         -------
-        The data string of the generated variant.
+        string
+            Symbol content of the selected variant.
         """
-
-        '''
-        options = self.description.options
-        if 'type' in options.keys():
-            if options['type'] == 'header':
-                return self._generate_header(variant_id)
-        '''
         return self._generate_box(variant_id)
 
     def filename(self, variant_id=0):
@@ -167,7 +133,9 @@ class Symbol(SymbolRender):
 
         Returns
         -------
-        The (folder, filename) the variant. The folder can be None.
+        (string, string)
+           The (folder, filename) of the selected variant. Folder can be None.
+
         """
 
         desc = self.description.descriptions
@@ -185,7 +153,7 @@ class Symbol(SymbolRender):
 
     def set_text(self, name, value, x, y, color=8, size=10, visibility=1, show=_SHOW_VALUE, angle=0, alignment=0,
                  lines=1):
-        """ Add text to file
+        """ Add text component to symbol
 
         Parameters
         ----------
@@ -197,6 +165,9 @@ class Symbol(SymbolRender):
             x coordinates
         y: :class:`int`
             y coordinates
+
+        Other Parameters
+        ----------------
         color: :class:`int`
             color of text
         size: :class:`int`
@@ -211,18 +182,29 @@ class Symbol(SymbolRender):
             text alignment
         lines: :class:`int`
             amount of lines
-
-        Only name, value and position (x/y) need to be set.
-        
-        Returns
-        -------
-        None
         """
-        # T x y color size visibility show name value angle alignment num lines
         self.data += "T %d %d %d %d %d %d %d %d %d\n" % (x, y, color, size, visibility, show, angle, alignment, lines)
         self.data += "%s=%s\n" % (name, value)
 
     def set_pin(self, name, number, pin_type, x, y, length=300, mirror=False):
+        """ Add pin to symbol
+
+        Parameters
+        ----------
+        name: :class:`string`
+            The pin name.
+        number: :class:`string`
+            The pin number.
+        pin_type: :class:`string`
+            The pin type.
+
+        Other Parameters
+        ----------------
+        length: :class:`int`
+            The pin length
+        mirror: :class:`bool`
+            Set to true to mirror the pin.
+        """
         align1 = self._ALIGN_MIDDLE + self._ALIGN_LEFT
         align2 = self._ALIGN_BOTTOM + self._ALIGN_RIGHT
         offset = 1

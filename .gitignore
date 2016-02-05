@@ -61,6 +61,10 @@ target/
 #Ipython Notebook
 .ipynb_checkpoints
 
+# documentation
+doc/_build
+
 #structure
 output
 .idea
+unused

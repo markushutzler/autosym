@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
-    autosym - Automatic generic schematic symbol generation
-    Copyright (C) 2015  Markus Hutzler
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-'''
+# -*- coding: utf-8 -*-
+# autosym - Automatic generic schematic symbol generation
+# Copyright (C) 2015  Markus Hutzler
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
 from enum import Enum
@@ -131,10 +130,13 @@ class Variant(object):
 
 
 class Description(object):
-    """ The symbol description parses and holds information for a symbol.
+    """ The symbol description parses and holds information for a symbol. Tis class provides information about the
+    different variants op a symbol.
     
-    Args:
-        path (string)
+    Parameters
+    ----------
+    path: :class:`string`
+        The path to the symbol description file.
     """
 
     def __init__(self, path):
@@ -251,32 +253,22 @@ class Description(object):
     @property
     def variants(self):
         """
-        Property to access parses variants.
-
-        Returns: list
-            a list ov variants
-
+        List of variants. Variants contain the packaging information and pins of different versions
+        of the same component.
         """
         return self._variants
 
     @property
     def descriptions(self):
         """
-        Property to access parses variants.
-
-        Returns: list
-            a list ov variants
-
+        Directory of descriptions. Descriptions are key / value pairs that describe the component. Some
+        are placed into the symbol during rendering, others are used by the render to categorize the component.
         """
         return self._descriptions
 
     @property
     def options(self):
         """
-        Property to access parses variants.
-
-        Returns: list
-            a list ov variants
-
+        Directory of options. Options are key / value pairs that define rendering parameters.
         """
         return self._options

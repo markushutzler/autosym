@@ -22,8 +22,6 @@ from enum import Enum
 
 re_option = re.compile("^\[([A-Za-z ]+)\]?")
 re_config = re.compile("^([\S ]+)=([\S ]+)?")
-re_value2 = re.compile("^([\S ]+)\s*:\s*([\S ]+)$")
-re_value3 = re.compile("^([\S ]+)\s*:\s*([\S ]+)\s*:\s*([\S ]+)\s*$")
 
 
 class ParsingError(Exception):
@@ -32,6 +30,7 @@ class ParsingError(Exception):
 
     def __str__(self):
         return repr(self.value)
+
 
 class Pin(object):
     class Direction(Enum):
@@ -119,6 +118,7 @@ class Variant(object):
     @property
     def name(self):
         return self._name
+
     @property
     def package(self):
         return self._package
@@ -134,7 +134,7 @@ class Description(object):
     """ The symbol description parses and holds information for a symbol.
     
     Args:
-        path
+        path (string)
     """
 
     def __init__(self, path):
@@ -153,51 +153,17 @@ class Description(object):
         """ Amount of registered lines """
         return max(len(self._m_left), len(self._m_right))
 
-    @property
-    def width(self):
-        """
-        Calculates and returns the with of the symbol box.
-        
-        Returns:
-            width of the symbol box
-        """
-        ret = 0
-        lines = []
-        for pin in self._m_left:
-            if len(pin):
-                temp = 0
-                name = pin[1].strip(' ')
-                for ch in name:
-                    temp += table[ch]
-                lines.append(temp)
-
-        line = 0
-        for pin in self._m_right:
-            if len(pin):
-                temp = 0
-                name = pin[1].strip(' ')
-                for ch in name:
-                    temp += table[ch]
-                try:
-                    lines[line] += temp
-                except:
-                    pass
-                line += 1
-
-        for line in lines:
-            ret = max(ret, line)
-
-        return ret
-
     @staticmethod
     def _parse_line(line):
+        line.strip(' \t\r\n')
+        c = line.find('#')
+        if c >= 0:
+            # todo: handle comment without missing same line's contents
+            # comment = line[c:]
+            line = line[:c]
+
         if len(line) == 0:
             return "EMPTY", 0
-        if line[0] == '#':
-            return "COMMENT", 0
-        line = line.split('#')
-        line = line[0]
-        line.strip(' \t\r\n')
 
         m = re_option.match(line)
         if m:
@@ -207,18 +173,15 @@ class Description(object):
         if m:
             return "CONFIG", map(str.strip, m.groups())
 
-        m = re_value3.match(line)
-        if m:
-            return "VALUE", map(str.strip, m.groups())
+        grp = re.split(":?", line)
+        if len(grp) > 1:
+            return "VALUE", map(str.strip, grp)
 
-        m = re_value2.match(line)
-        if m:
-            return "VALUE", map(str.strip, m.groups())
         return "ERROR", 0
 
-    " Parse symbol descrition "
-
     def parse(self):
+        """ Parse symbol descrition """
+
         handler = open(self._path)
         data = handler.readlines()
 
@@ -227,40 +190,43 @@ class Description(object):
 
         for line in data:
             line_nr += 1
-            # remove all line ending characters or white spaces
+            # remove all line white spaces
             line = line.strip('\n\r\t ')
-            # parse line and check if more handeling has to be done
-            line_value = self._parse_line(line)
+            # parse line and check if more handling has to be done
+            vtype, value = self._parse_line(line)
 
-            if line_value[0] == "ERROR":
+            if vtype == "ERROR":
                 raise ParsingError("%d: %s" % (line_nr, line))
-            if line_value[0] == "OPTION":
-                option = line_value[1]
+            if vtype == "OPTION":
+                option = value
 
-            if option == 'mapping left' and line_value[0] == "VALUE":
-                x = list(line_value[1])
+            if option == 'mapping left' and vtype == "VALUE":
+                x = list(value)
                 x[0] = x[0].split(',')
                 self._m_left.append(x)
-            if option == 'mapping left' and line_value[0] == "EMPTY":
+            if option == 'mapping left' and vtype == "EMPTY":
                 self._m_left.append([])
 
-            if option == 'mapping right' and line_value[0] == "VALUE":
-                x = list(line_value[1])
+            if option == 'mapping right' and vtype == "VALUE":
+                x = list(value)
                 x[0] = x[0].split(',')
                 self._m_right.append(x)
-            if option == 'mapping right' and line_value[0] == "EMPTY":
+            if option == 'mapping right' and vtype == "EMPTY":
                 self._m_right.append([])
                 # make a list ov variants
-            if option == 'variants' and line_value[0] == "VALUE":
-                self._variant_lines.append(line_value[1])
+            if option == 'variants' and vtype == "VALUE":
+                self._variant_lines.append(value)
+
+            if option == 'footprints' and vtype == "VALUE":
+                print value
 
             # read description
-            if option == 'description' and line_value[0] == "CONFIG":
-                self._descriptions[line_value[1][0]] = line_value[1][1]
+            if option == 'description' and vtype == "CONFIG":
+                self._descriptions[value[0]] = value[1]
 
             # read options
-            if option == 'option' and line_value[0] == "CONFIG":
-                self._options[line_value[1][0]] = line_value[1][1]
+            if option == 'option' and vtype == "CONFIG":
+                self._options[value[0]] = value[1]
 
         symbol_type = 'box'
         if 'type' in self._options.keys():
@@ -314,5 +280,3 @@ class Description(object):
 
         """
         return self._options
-
-

@@ -175,30 +175,31 @@ class Description(object):
     def _parse_line(line):
         line.strip(' \t\r\n')
         c = line.find('#')
+        comment = ""
         if c == 0:
-            return "COMMENT", line[:c]
+            comment = line[c+1:]
+            return "COMMENT", 0, comment
 
         if c > 0:
-            # todo: handle comment without missing same line's contents
-            # comment = line[c:]
+            comment = line[c+1:]
             line = line[:c]
 
         if len(line) == 0:
-            return "EMPTY", 0
+            return "EMPTY", 0, comment
 
         m = re_option.match(line)
         if m:
-            return "OPTION", m.group(1)
+            return "OPTION", m.group(1), comment
 
         m = re_config.match(line)
         if m:
-            return "CONFIG", map(str.strip, m.groups())
+            return "CONFIG", map(str.strip, m.groups()), comment
 
         grp = re.split(":?", line)
         if len(grp) > 1:
-            return "VALUE", map(str.strip, grp)
+            return "VALUE", map(str.strip, grp), comment
 
-        return "ERROR", 0
+        return "ERROR", 0, comment
 
     def parse(self):
         """ Parse symbol descrition """
@@ -214,7 +215,7 @@ class Description(object):
             # remove all line white spaces
             line = line.strip('\n\r\t ')
             # parse line and check if more handling has to be done
-            vtype, value = self._parse_line(line)
+            vtype, value, comment = self._parse_line(line)
             if vtype == "ERROR":
                 raise ParsingError(self._path, line_nr, line)
             if vtype == "OPTION":

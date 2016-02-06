@@ -101,6 +101,7 @@ class Variant(object):
         self._name = name
         self._package = package
         self._pins = []
+        self._footprints = []
         self.footprint = footprint
         self.options = {}
 
@@ -113,6 +114,9 @@ class Variant(object):
         if filter_empty and pin.empty:
             return
         self._pins.append(pin)
+
+    def append_footprint(self, fp):
+        self._footprints.append(fp)
 
     def description(self):
         ret = ''
@@ -128,6 +132,10 @@ class Variant(object):
     @property
     def package(self):
         return self._package
+
+    @property
+    def footprints(self):
+        return self._footprints
 
     def pins(self, direction=None):
         if direction:
@@ -154,6 +162,7 @@ class Description(object):
         self._variants = []
         self._descriptions = {}
         self._options = {}
+        self._footprints = []
         self._path = path
         self._error = False
 
@@ -166,7 +175,10 @@ class Description(object):
     def _parse_line(line):
         line.strip(' \t\r\n')
         c = line.find('#')
-        if c >= 0:
+        if c == 0:
+            return "COMMENT", line[:c]
+
+        if c > 0:
             # todo: handle comment without missing same line's contents
             # comment = line[c:]
             line = line[:c]
@@ -203,7 +215,6 @@ class Description(object):
             line = line.strip('\n\r\t ')
             # parse line and check if more handling has to be done
             vtype, value = self._parse_line(line)
-
             if vtype == "ERROR":
                 raise ParsingError(self._path, line_nr, line)
             if vtype == "OPTION":
@@ -227,7 +238,7 @@ class Description(object):
                 self._variant_lines.append(value)
 
             if option == 'footprints' and vtype == "VALUE":
-                print value
+                self._footprints.append(value)
 
             # read description
             if option == 'description' and vtype == "CONFIG":
@@ -243,11 +254,13 @@ class Description(object):
 
         if symbol_type == 'box':
             for idx, variant in enumerate(self._variant_lines):
+                v = Variant(variant[0], variant[1])
+                for fp in self._footprints:
+                    if len(fp) == 2 and fp[0] == variant[0]:
+                        for f in map(str.strip, fp[1].split(',')):
+                            v.append_footprint(f)
+
                 cnt = 0
-                footprint = None
-                if len(variant) > 2:
-                    footprint = variant[2]
-                v = Variant(variant[0], variant[1], footprint)
                 for pin in self._m_left:
                     v.append_pin(Pin(pin, idx, Pin.Direction.left, cnt))
                     cnt += 1

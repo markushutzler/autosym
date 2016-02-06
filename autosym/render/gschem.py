@@ -95,10 +95,21 @@ class Symbol(object):
 
         hidden_attrs = ['description', 'comment', 'documentation', 'symversion', 'author', 'dist-license',
                         'use-license']
-        if variant.footprint:
-            text_pos += line_spacing
-            self.set_text('footprint', variant.footprint, x_padding, text_pos,
+
+        main_set = False
+        fp_cnt = len(variant.footprints)
+        for footprint in variant.footprints:
+            if not main_set:
+                text_pos += line_spacing
+                self.set_text('footprint', footprint, x_padding, text_pos,
                           color=8, size=10, visibility=0, show=self._SHOW_NAME_VALUE)
+                main_set = True
+            else:
+                fp_cnt -= 1
+                text_pos += line_spacing
+                self.set_text('footprint_%d' % fp_cnt, footprint, x_padding, text_pos,
+                          color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
+
         for attr in hidden_attrs[::-1]:
             text_pos += line_spacing
             value = ""
@@ -106,6 +117,7 @@ class Symbol(object):
                 value = desc[attr]
             self.set_text(attr, value, x_padding, text_pos,
                           color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
+
         return self.data
 
     def generate(self, variant_id=0):

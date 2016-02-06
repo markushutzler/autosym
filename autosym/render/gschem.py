@@ -48,30 +48,52 @@ class Symbol(object):
         self.description = desc
         self.data = 'v 20110115 2\n'
 
+    def _set_description(self, variant_id, x, y):
+        line_spacing = 200
+        desc = self.description.descriptions
+        variant = self.description.variants[variant_id]
+
+        if 'refdes' in desc.keys():
+            self.set_text('refdes', desc['refdes'], x, y)
+        if 'device' in desc.keys():
+            self.set_text('device', desc['device'], x, 0)
+
+        hidden_attrs = ['description', 'comment', 'documentation', 'symversion', 'author', 'dist-license',
+                        'use-license']
+
+        main_set = False
+        fp_cnt = len(variant.footprints)
+        for footprint in variant.footprints:
+            if not main_set:
+                y += line_spacing
+                self.set_text('footprint', footprint, x, y,
+                          color=8, size=10, visibility=0, show=self._SHOW_NAME_VALUE)
+                main_set = True
+            else:
+                fp_cnt -= 1
+                y += line_spacing
+                self.set_text('footprint_%d' % fp_cnt, footprint, x, y,
+                          color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
+
+        for attr in hidden_attrs[::-1]:
+            y += line_spacing
+            self.set_text(attr, desc.get(attr, ""), x, y,
+                          color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
+
     def _generate_box(self, variant_id):
         options = self.description.options
 
-        symbol_width = 1000
-        if 'symbol_width' in options.keys():
-            symbol_width = int(options['symbol_width'])
-
-        pin_length = 300
-        if 'pin_length' in options.keys():
-            pin_length = int(options['pin_length'])
-
-        pin_grid = 200
-        if 'pin_grid' in options.keys():
-            pin_grid = int(options['pin_grid'])
-
+        symbol_width = int(options.get('symbol_width', 1000))
+        pin_length = int(options.get('pin_length', 300))
+        pin_grid = int(options.get('pin_grid', 200))
         x_padding = pin_length + 200
         y_padding = 200
-
         box_width = symbol_width
         box_height = (self.description.height + 1) * pin_grid
+
         self.set_box(x_padding, y_padding, box_width, box_height)
 
         variant = self.description.variants[variant_id]
-
         for pin in variant.pins():
             y_pos = box_height - (pin.position + 1) * pin_grid + y_padding
 
@@ -85,38 +107,34 @@ class Symbol(object):
                 self.set_pin(name, pin.number, pin.type, x_padding + box_width + pin_length, y_pos, pin_length, True)
 
         text_pos = y_padding + box_height + 100
-        line_spacing = 200
-        desc = self.description.descriptions
+        self._set_description(variant_id, x_padding, text_pos)
 
-        if 'refdes' in desc.keys():
-            self.set_text('refdes', desc['refdes'], x_padding, text_pos)
-        if 'device' in desc.keys():
-            self.set_text('device', desc['device'], x_padding + box_width, text_pos, alignment=6)
+        return self.data
 
-        hidden_attrs = ['description', 'comment', 'documentation', 'symversion', 'author', 'dist-license',
-                        'use-license']
+    def _generate_header(self, variant_id):
+        print 'generate...'
+        options = self.description.options
+        variant = self.description.variants[variant_id]
 
-        main_set = False
-        fp_cnt = len(variant.footprints)
-        for footprint in variant.footprints:
-            if not main_set:
-                text_pos += line_spacing
-                self.set_text('footprint', footprint, x_padding, text_pos,
-                          color=8, size=10, visibility=0, show=self._SHOW_NAME_VALUE)
-                main_set = True
-            else:
-                fp_cnt -= 1
-                text_pos += line_spacing
-                self.set_text('footprint_%d' % fp_cnt, footprint, x_padding, text_pos,
-                          color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
+        pin_length = int(options.get('pin_length', 150))
+        pin_grid = int(options.get('pin_grid', 200))
+        pin_geometry = options.get('pin_geometry', 'box')
+        x_padding = pin_length + 200
+        y_padding = 200
+        y_pos = y_padding + pin_grid * len(variant.pins())
+        self._set_description(variant_id, x_padding, y_pos)
+        y_pos -= 100
 
-        for attr in hidden_attrs[::-1]:
-            text_pos += line_spacing
-            value = ""
-            if attr in desc.keys():
-                value = desc[attr]
-            self.set_text(attr, value, x_padding, text_pos,
-                          color=8, size=8, visibility=0, show=self._SHOW_NAME_VALUE)
+        for pin in variant.pins():
+            if pin.direction == Pin.Direction.left:
+                self.set_pin(pin.name, pin.number, pin.type, x_padding - pin_length,
+                             y_pos, pin_length, False, show_number=pin.show_number, label_padding=150)
+                if pin_geometry in ['box', 'hole']:
+                    self.set_box(x_padding, y_pos-50, 100, 100, color=4, line_width=30)
+                if pin_geometry in ['circle', 'hole']:
+                    self.set_circle(x_padding+50, y_pos, 50, color=4, line_width=30)
+
+                y_pos -= pin_grid
 
         return self.data
 
@@ -133,6 +151,10 @@ class Symbol(object):
         string
             Symbol content of the selected variant.
         """
+        options = self.description.options
+        symbol_type = options.get('type', 'box')
+        if symbol_type == 'header':
+            return self._generate_header(variant_id)
         return self._generate_box(variant_id)
 
     def filename(self, variant_id=0):
@@ -149,7 +171,6 @@ class Symbol(object):
            The (folder, filename) of the selected variant. Folder can be None.
 
         """
-
         desc = self.description.descriptions
         variant = self.description.variants[variant_id].package
 
@@ -198,7 +219,7 @@ class Symbol(object):
         self.data += "T %d %d %d %d %d %d %d %d %d\n" % (x, y, color, size, visibility, show, angle, alignment, lines)
         self.data += "%s=%s\n" % (name, value)
 
-    def set_pin(self, name, number, pin_type, x, y, length=300, mirror=False):
+    def set_pin(self, name, number, pin_type, x, y, length=300, mirror=False, show_number=1, show_name=1, label_padding=10):
         """ Add pin to symbol
 
         Parameters
@@ -227,15 +248,17 @@ class Symbol(object):
 
         self.data += "P %d %d %d %d 1 0 0\n" % (x, y, x + length * offset, y)
         self.data += "{\n"
-        self.set_text('pinnumber', number, x + (length - 50) * offset, y + 50, 5, 8, 1, self._SHOW_VALUE, 0, align2, 1)
+        self.set_text('pinnumber', number, x + (length - 50) * offset, y + 50, 5, 8, show_number, self._SHOW_VALUE, 0, align2, 1)
         self.set_text('pinseq', number, x + (length - 50) * offset, y + 50, 5, 8, 0, self._SHOW_VALUE, 0, align2, 1)
         self.set_text('pintype', pin_type, x + (length - 50) * offset, y + 50, 5, 8, 0, self._SHOW_VALUE, 0, align2, 1)
 
-        self.set_text('pinlabel', name, x + (length + 50) * offset, y, 5, 10, 1, self._SHOW_VALUE, 0, align1, 1)
+        self.set_text('pinlabel', name, x + (length + label_padding) * offset, y, 5, 10, show_name, self._SHOW_VALUE, 0, align1, 1)
         self.data += "}\n"
 
-    def set_box(self, x, y, width, height):
-        self.data += "B %d %d %d %d 3 0 0 0 -1 -1 0 -1 -1 -1 -1 -1\n" % (x, y, width, height)
+    def set_box(self, x, y, width, height, color=3, line_width=0):
+        self.data += "B %d %d %d %d %d %d 0 0 -1 -1 0 -1 -1 -1 -1 -1\n" % (x, y, width, height, color, line_width)
 
+    def set_circle(self, x, y, radius, color=3, line_width=0):
+        self.data += "V %d %d %d %d %d 0 0 -1 -1 0 -1 -1 -1 -1 -1\n" % (x, y, radius, color, line_width)
 if __name__ == '__main__':
     pass

@@ -43,6 +43,7 @@ class Pin(object):
         none, left, right, bottom, top = range(5)
 
     direction = Direction.none
+    show_number = 1
 
     def __init__(self, data, variant_id=-1, direction=Direction.none, position=0):
         self._number = ""
@@ -61,12 +62,8 @@ class Pin(object):
             self._name = data[1]
             self._io_type = data[2]
 
-    def __str__(self):
-        return self.description()
-
-    def description(self):
-        ret = "<Pin: %s - %s (%d)>" % (self._number, self._name, self._position)
-        return ret
+    def __repr__(self):
+        return "<Pin: %s - %s (%d)>" % (self._number, self._name, self._position)
 
     @property
     def number(self):
@@ -220,38 +217,28 @@ class Description(object):
                 raise ParsingError(self._path, line_nr, line)
             if vtype == "OPTION":
                 option = value
-
             if option == 'mapping left' and vtype == "VALUE":
                 x = list(value)
                 x[0] = x[0].split(',')
                 self._m_left.append(x)
             if option == 'mapping left' and vtype == "EMPTY":
                 self._m_left.append([])
-
             if option == 'mapping right' and vtype == "VALUE":
                 x = list(value)
                 x[0] = x[0].split(',')
                 self._m_right.append(x)
             if option == 'mapping right' and vtype == "EMPTY":
                 self._m_right.append([])
-                # make a list ov variants
             if option == 'variants' and vtype == "VALUE":
                 self._variant_lines.append(value)
-
             if option == 'footprints' and vtype == "VALUE":
                 self._footprints.append(value)
-
-            # read description
             if option == 'description' and vtype == "CONFIG":
                 self._descriptions[value[0]] = value[1]
-
-            # read options
             if option == 'option' and vtype == "CONFIG":
                 self._options[value[0]] = value[1]
 
-        symbol_type = 'box'
-        if 'type' in self._options.keys():
-            symbol_type = self._options['type']
+        symbol_type = self._options.get('type', 'box')
 
         if symbol_type == 'box':
             for idx, variant in enumerate(self._variant_lines):
@@ -260,7 +247,6 @@ class Description(object):
                     if len(fp) == 2 and fp[0] == variant[0]:
                         for f in map(str.strip, fp[1].split(',')):
                             v.append_footprint(f)
-
                 cnt = 0
                 for pin in self._m_left:
                     v.append_pin(Pin(pin, idx, Pin.Direction.left, cnt))
@@ -269,6 +255,24 @@ class Description(object):
                 for pin in self._m_right:
                     v.append_pin(Pin(pin, idx, Pin.Direction.right, cnt))
                     cnt += 1
+                self._variants.append(v)
+
+        if symbol_type == 'header':
+            pin_length = int(self._options.get('pin_length', 300))
+            pin_grid = int(self._options.get('pin_grid', 200))
+            symbol_width = int(self._options.get('symbol_width', 300))
+            numbering = self._options.get('numbering', 'Z')
+            pin_geometry = self._options.get('pin_geometry', 'box')
+            rows = int(self._options.get('rows', 1))
+            lines_start = int(self._options.get('lines_start', 1))
+            lines_end = int(self._options.get('lines_end', 10))
+
+            for idx, lines in enumerate(range(lines_start, lines_end+1)):
+                v = Variant('%dx%d' % (rows, lines), 'Header package')
+                for nr in xrange(lines):
+                    pin = Pin([str(nr+1), str(nr+1), 'pas'], idx, Pin.Direction.left, nr+1)
+                    pin.show_number = 0
+                    v.append_pin(pin)
                 self._variants.append(v)
 
     @property

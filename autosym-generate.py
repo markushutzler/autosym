@@ -63,8 +63,8 @@ if __name__ == '__main__':
         symd = Description(f)
         try:
             symd.parse()
-            g = gschem.Symbol(symd)
             for index, variant in enumerate(symd.variants):
+                g = gschem.Symbol(symd)
                 data = g.generate(index)
                 subfolder, filename = g.filename(index)
                 if subfolder:

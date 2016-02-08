@@ -269,10 +269,19 @@ class Description(object):
 
             for idx, lines in enumerate(range(lines_start, lines_end+1)):
                 v = Variant('%dx%d' % (rows, lines), 'Header package')
+                pin_nr = 1
                 for nr in xrange(lines):
-                    pin = Pin([str(nr+1), str(nr+1), 'pas'], idx, Pin.Direction.left, nr+1)
+                    pin = Pin([str(pin_nr), str(pin_nr), 'pas'], idx, Pin.Direction.left, nr+1)
+                    pin_nr += 1
                     pin.show_number = 0
                     v.append_pin(pin)
+
+                    if rows == 2:
+                        pin = Pin([str(pin_nr), str(pin_nr), 'pas'], idx, Pin.Direction.right, nr+1)
+                        pin_nr += 1
+                        pin.show_number = 0
+                        v.append_pin(pin)
+
                 self._variants.append(v)
 
     @property

@@ -112,29 +112,38 @@ class Symbol(object):
         return self.data
 
     def _generate_header(self, variant_id):
-        print 'generate...'
         options = self.description.options
         variant = self.description.variants[variant_id]
 
         pin_length = int(options.get('pin_length', 150))
         pin_grid = int(options.get('pin_grid', 200))
+        rows = int(options.get('rows', 1))
         pin_geometry = options.get('pin_geometry', 'box')
         x_padding = pin_length + 200
         y_padding = 200
-        y_pos = y_padding + pin_grid * len(variant.pins())
-        self._set_description(variant_id, x_padding, y_pos)
-        y_pos -= 100
+        y = y_padding + pin_grid * len(variant.pins())/rows
+        self._set_description(variant_id, x_padding, y)
+        y -= 100
 
         for pin in variant.pins():
+            y_pin = y-(pin.position-1)*pin_grid
             if pin.direction == Pin.Direction.left:
-                self.set_pin(pin.name, pin.number, pin.type, x_padding - pin_length,
-                             y_pos, pin_length, False, show_number=pin.show_number, label_padding=150)
+                x = x_padding
+                self.set_pin(pin.name, pin.number, pin.type, x - pin_length,
+                             y_pin, pin_length, False, show_number=pin.show_number, label_padding=150)
                 if pin_geometry in ['box', 'hole']:
-                    self.set_box(x_padding, y_pos-50, 100, 100, color=4, line_width=30)
+                    self.set_box(x, y_pin-50, 100, 100, color=4, line_width=30)
                 if pin_geometry in ['circle', 'hole']:
-                    self.set_circle(x_padding+50, y_pos, 50, color=4, line_width=30)
+                    self.set_circle(x+50, y_pin, 50, color=4, line_width=30)
 
-                y_pos -= pin_grid
+            if pin.direction == Pin.Direction.right:
+                x = x_padding + 800
+                self.set_pin(pin.name, pin.number, pin.type, x + pin_length,
+                             y_pin, pin_length, True, show_number=pin.show_number, label_padding=150)
+                if pin_geometry in ['box', 'hole']:
+                    self.set_box(x-100, y_pin-50, 100, 100, color=4, line_width=30)
+                if pin_geometry in ['circle', 'hole']:
+                    self.set_circle(x-50, y_pin, 50, color=4, line_width=30)
 
         return self.data
 

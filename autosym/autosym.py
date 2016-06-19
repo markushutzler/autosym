@@ -20,10 +20,50 @@
 import os
 import errno
 from optparse import OptionParser
-from autosym.render import gschem
-from autosym.description import Description, ParsingError
+from render import gschem
+from description import Description, ParsingError
 
-if __name__ == '__main__':
+
+def generate(f, output_path, options):
+    if not options.quiet:
+        print f, ">>",
+    symd = Description(f)
+    symd.parse()
+    for index, variant in enumerate(symd.variants):
+        g = gschem.Symbol(symd)
+        data = g.generate(index)
+        subfolder, filename = g.filename(index)
+        if subfolder:
+            subfolder = output_path+'/'+subfolder+'/'
+        else:
+            subfolder = output_path+'/'
+
+        try:
+            os.makedirs(subfolder)
+        except OSError as exc:
+            if exc.errno != errno.EEXIST:
+                raise
+        if not options.quiet:
+            print subfolder+filename,
+        h = open(subfolder+filename, 'w')
+        h.write(data)
+        h.close()
+    if not options.quiet:
+        print
+
+
+def make_file_list(path):
+    ret = []
+    for r, d, f in os.walk(path):
+        for files in f:
+            if files.endswith(".symv"):
+                ret.append(os.path.join(r, files))
+            if files.endswith(".symd"):
+                ret.append(os.path.join(r, files))
+    return ret
+
+
+def main():
     usage = "usage: %prog [options] library-path output-path"
     parser = OptionParser(usage=usage, version="%prog 0.1")
     parser.add_option("-q", "",
@@ -47,48 +87,18 @@ if __name__ == '__main__':
     if not os.path.isdir(output_path):
         parser.error("output path is not a directory")
 
-    file_list = []
-
     # find all symd files in input directory
-    for r, d, f in os.walk(symd_path):
-        for files in f:
-            if files.endswith(".symv"):
-                file_list.append(os.path.join(r, files))
-            if files.endswith(".symd"):
-                file_list.append(os.path.join(r, files))
+    file_list = make_file_list(symd_path)
 
     # generate symbols for symbol description files
     for f in file_list:
-        if not options.quiet:
-            print f, ">>",
-        symd = Description(f)
         try:
-            symd.parse()
-            for index, variant in enumerate(symd.variants):
-                g = gschem.Symbol(symd)
-                data = g.generate(index)
-                subfolder, filename = g.filename(index)
-                if subfolder:
-                    subfolder = output_path+'/'+subfolder+'/'
-                else:
-                    subfolder = output_path+'/'
-
-                try:
-                    os.makedirs(subfolder)
-                except OSError as exc:
-                    if exc.errno != errno.EEXIST:
-                        raise
-                if not options.quiet:
-                    print subfolder+filename,
-                h = open(subfolder+filename, 'w')
-                h.write(data)
-                h.close()
-            if not options.quiet:
-                print
-
+            generate(f, output_path, options)
         except ParsingError as e:
             print 'Parsing error in %s line %d:\n%s' % (
-                            e.file,
-                            e.line_nr,
-                e.line
-                )
+                e.file, e.line_nr, e.line)
+    return 0
+
+
+if __name__ == '__main__':
+    exit(main())

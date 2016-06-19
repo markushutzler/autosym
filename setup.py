@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+# from distutils.core import setup
+from setuptools import setup
+
 
 setup(name='autosym',
       version='0.1',
@@ -10,4 +12,9 @@ setup(name='autosym',
       packages=['autosym', 'autosym.render', ],
       license='GPL3',
       package_dir={'autosym': 'autosym'},
+      entry_points={
+          "console_scripts": [
+              "autosym=autosym.autosym:main",
+                  ],
+      }
       )

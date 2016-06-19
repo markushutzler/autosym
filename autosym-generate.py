@@ -27,7 +27,8 @@ if __name__ == '__main__':
     usage = "usage: %prog [options] library-path output-path"
     parser = OptionParser(usage=usage, version="%prog 0.1")
     parser.add_option("-q", "",
-                      default=False, action="store_true", dest="quiet", help="don't print status messages to stdout")
+                      default=False, action="store_true", dest="quiet",
+                      help="don't print status messages to stdout")
     (options, args) = parser.parse_args()
 
     if len(args) < 2:
@@ -84,7 +85,10 @@ if __name__ == '__main__':
                 h.close()
             if not options.quiet:
                 print
-            
-        except ParsingError, e:
-            print 'Parsing error in %s line %d:\n%s' % (e.file, e.line_nr, e.line)
 
+        except ParsingError as e:
+            print 'Parsing error in %s line %d:\n%s' % (
+                            e.file,
+                            e.line_nr,
+                e.line
+                )

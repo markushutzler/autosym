@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
 # autosym - Automatic generic schematic symbol generation
 # Copyright (C) 2015  Markus Hutzler
 #
@@ -45,7 +44,8 @@ class Pin(object):
     direction = Direction.none
     show_number = 1
 
-    def __init__(self, data, variant_id=-1, direction=Direction.none, position=0):
+    def __init__(self, data,
+                 variant_id=-1, direction=Direction.none, position=0):
         self._number = ""
         self._name = ""
         self._io_type = ""
@@ -63,7 +63,9 @@ class Pin(object):
             self._io_type = data[2]
 
     def __repr__(self):
-        return "<Pin: %s - %s (%d)>" % (self._number, self._name, self._position)
+        return "<Pin: %s - %s (%d)>" % (self._number,
+                                        self._name,
+                                        self._position)
 
     @property
     def number(self):
@@ -142,17 +144,15 @@ class Variant(object):
 
 
 class Description(object):
-    """ The symbol description parses and holds information for a symbol. Tis class provides information about the
-    different variants op a symbol.
-    
-    Parameters
-    ----------
-    path: :class:`string`
-        The path to the symbol description file.
+    """The symbol description parses and holds information for a symbol.
+
+    Tis class provides information about the different variants op a symbol.
+
+    Args:
+        path (`string`): The path to the symbol description file.
     """
 
     def __init__(self, path):
-        """ where does this go? """
         self._m_left = []
         self._m_right = []
         self._variant_lines = []
@@ -165,7 +165,7 @@ class Description(object):
 
     @property
     def height(self):
-        """ Amount of registered lines """
+        """Amount of registered lines."""
         return max(len(self._m_left), len(self._m_right))
 
     @staticmethod
@@ -199,7 +199,7 @@ class Description(object):
         return "ERROR", 0, comment
 
     def parse(self):
-        """ Parse symbol descrition """
+        """Parse symbol description."""
 
         handler = open(self._path)
         data = handler.readlines()
@@ -258,11 +258,6 @@ class Description(object):
                 self._variants.append(v)
 
         if symbol_type == 'header':
-            pin_length = int(self._options.get('pin_length', 300))
-            pin_grid = int(self._options.get('pin_grid', 200))
-            symbol_width = int(self._options.get('symbol_width', 300))
-            numbering = self._options.get('numbering', 'Z')
-            pin_geometry = self._options.get('pin_geometry', 'box')
             rows = int(self._options.get('rows', 1))
             lines_start = int(self._options.get('lines_start', 1))
             lines_end = int(self._options.get('lines_end', 10))
@@ -271,13 +266,15 @@ class Description(object):
                 v = Variant('%dx%d' % (rows, lines), 'Header package')
                 pin_nr = 1
                 for nr in xrange(lines):
-                    pin = Pin([str(pin_nr), str(pin_nr), 'pas'], idx, Pin.Direction.left, nr+1)
+                    pin = Pin([str(pin_nr), str(pin_nr), 'pas'],
+                              idx, Pin.Direction.left, nr+1)
                     pin_nr += 1
                     pin.show_number = 0
                     v.append_pin(pin)
 
                     if rows == 2:
-                        pin = Pin([str(pin_nr), str(pin_nr), 'pas'], idx, Pin.Direction.right, nr+1)
+                        pin = Pin([str(pin_nr), str(pin_nr), 'pas'],
+                                  idx, Pin.Direction.right, nr+1)
                         pin_nr += 1
                         pin.show_number = 0
                         v.append_pin(pin)
@@ -287,22 +284,29 @@ class Description(object):
     @property
     def variants(self):
         """
-        List of variants. Variants contain the packaging information and pins of different versions
-        of the same component.
+        List of variants.
+
+        Variants contain the packaging information and pins of different
+        versions of the same component.
         """
         return self._variants
 
     @property
     def descriptions(self):
         """
-        Directory of descriptions. Descriptions are key / value pairs that describe the component. Some
-        are placed into the symbol during rendering, others are used by the render to categorize the component.
+        Directory of descriptions.
+
+        Descriptions are key / value pairs that describe the component. Some
+        are placed into the symbol during rendering, others are used by the
+        render to categorize the component.
         """
         return self._descriptions
 
     @property
     def options(self):
         """
-        Directory of options. Options are key / value pairs that define rendering parameters.
+        Directory of options.
+
+        Options are key / value pairs that define rendering parameters.
         """
         return self._options

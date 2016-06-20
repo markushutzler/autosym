@@ -8,7 +8,7 @@ language has several advantages:
 - simplicity
 
 I'm using this script for quite a while and decided to share it. Autosym uses a
-generic python approach to generate schematic symbols from symbol description
+generic Python approach to generate schematic symbols from symbol description
 files.
 
 Well, its still work in progress but I'm getting close to rewrite my code to
@@ -17,10 +17,14 @@ application. I'm planing to add eagle support next.
 
 Script Usage
 ------------
-The generation script allows you to generate symbols for gschem:
+The entry point allows you to generate symbols for gschem. autosym-library
+allows you to get a set of some example symbol descriptions.
 ```
+python setup.py install
+git clone https://github.com/markushutzler/autosym-library.git library
 autosym library output
 ```
+The gschem symbol files will be created in a new folder `output`.
 
 Module Usage
 ------------

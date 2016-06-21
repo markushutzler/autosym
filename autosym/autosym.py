@@ -16,17 +16,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+from __future__ import print_function, absolute_import
 import os
 import errno
 from optparse import OptionParser
-from render import gschem
-from description import Description, ParsingError
+from .autosym.render import gschem
+from .autosym.description import Description, ParsingError
 
 
 def generate(f, output_path, options):
     if not options.quiet:
-        print f, ">>",
+        print(f + " >>", end=' ')
     symd = Description(f)
     symd.parse()
     for index, variant in enumerate(symd.variants):
@@ -44,7 +44,7 @@ def generate(f, output_path, options):
             if exc.errno != errno.EEXIST:
                 raise
         if not options.quiet:
-            print subfolder+filename,
+            print(subfolder+filename, end=' ')
         h = open(subfolder+filename, 'w')
         h.write(data)
         h.close()
@@ -95,8 +95,8 @@ def main():
         try:
             generate(f, output_path, options)
         except ParsingError as e:
-            print 'Parsing error in %s line %d:\n%s' % (
-                e.file, e.line_nr, e.line)
+            print('Parsing error in %s line %d:\n%s' % (
+                e.file, e.line_nr, e.line))
     return 0
 
 

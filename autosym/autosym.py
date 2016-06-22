@@ -20,8 +20,8 @@ from __future__ import print_function, absolute_import
 import os
 import errno
 from optparse import OptionParser
-from .autosym.render import gschem
-from .autosym.description import Description, ParsingError
+from autosym.render import gschem
+from autosym.description import Description, ParsingError
 
 
 def generate(f, output_path, options):
@@ -49,7 +49,7 @@ def generate(f, output_path, options):
         h.write(data)
         h.close()
     if not options.quiet:
-        print
+        print()
 
 
 def make_file_list(path):

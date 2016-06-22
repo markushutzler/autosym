@@ -7,7 +7,7 @@ if __package__ == '':
     path = os.path.dirname(os.path.dirname(__file__))
     sys.path.insert(0, path)
 
-import autosym
+import autosym.autosym
 
 if __name__ == '__main__':
     sys.exit(autosym.autosym.main())

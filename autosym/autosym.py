@@ -33,7 +33,7 @@ def generate(f, output_path, options):
         g = gschem.Symbol(symd)
         data = g.generate(index)
         subfolder, filename = g.filename(index)
-        if subfolder:
+        if subfolder and options.categories:
             subfolder = output_path+'/'+subfolder+'/'
         else:
             subfolder = output_path+'/'
@@ -66,9 +66,12 @@ def make_file_list(path):
 def main():
     usage = "usage: %prog [options] library-path output-path"
     parser = OptionParser(usage=usage, version="%prog 0.1")
-    parser.add_option("-q", "",
+    parser.add_option("-q",
                       default=False, action="store_true", dest="quiet",
                       help="don't print status messages to stdout")
+    parser.add_option("-c",
+                      default=False, action="store_true", dest="categories",
+                      help="place symbols in category subfolders")
     (options, args) = parser.parse_args()
 
     if len(args) < 2:

@@ -12,4 +12,4 @@ else
 fi
 
 echo "Running autosym"
-python autosym library output
+autosym library output

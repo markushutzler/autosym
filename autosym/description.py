@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
-from enum import Enum
+
 
 re_option = re.compile("^\[([A-Za-z ]+)\]?")
 re_config = re.compile("^([\S ]+)=([\S ]+)?")
@@ -38,7 +38,7 @@ class ParsingError(Exception):
 
 
 class Pin(object):
-    class Direction(Enum):
+    class Direction(object):
         none, left, right, bottom, top = range(5)
 
     direction = Direction.none
